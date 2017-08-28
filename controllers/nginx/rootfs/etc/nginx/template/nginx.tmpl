@@ -741,10 +741,10 @@ stream {
                 ngx.ctx.contentType = "html"
                 ngx.header["content-length"] = nil
                 if ngx.header["location"] ~= nil then
-                    ngx.header["location"] = rewriteBaseUrl.rewriteURL(ngx.header["location"], {{ $location.Rewrite.Target }}, {{ $location.Path }}, {{ $server.Hostname }})
+                    ngx.header["location"] = rewriteBaseUrl.rewriteURL(ngx.header["location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}")
                 end
                 if ngx.header["content-location"] ~= nil then
-                    ngx.header["content-location"] = rewriteBaseUrl.rewriteURL(ngx.header["content-location"], {{ $location.Rewrite.Target }}, {{ $location.Path }}, {{ $server.Hostname }})
+                    ngx.header["content-location"] = rewriteBaseUrl.rewriteURL(ngx.header["content-location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}")
                 end
             end
         }
@@ -776,7 +776,7 @@ stream {
 
                 local gumbo = require "gumbo"
                 local rewriteBaseUrl = require "rewrite-base-url"
-                ngx.arg[1] = rewriteBaseUrl.rewriteHTML(body, {{ $location.Rewrite.Target }}, {{ $location.Path }}, {{ $server.Hostname }})
+                ngx.arg[1] = rewriteBaseUrl.rewriteHTML(body, "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}")
             end
         }
         proxy_set_header Accept-Encoding '*';
