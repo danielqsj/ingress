@@ -734,6 +734,54 @@ stream {
         client_body_buffer_size                 {{ $location.ClientBodyBufferSize }};
         {{ end }}
 
+        {{ if (and $location.Rewrite.AddBaseURL (ne $location.Path $location.Rewrite.Target)) }}
+        header_filter_by_lua_block {
+            if ngx.header["content-type"] == "text/html" then
+                local rewriteBaseUrl = require "rewrite-base-url"
+                ngx.ctx.contentType = "html"
+                ngx.header["content-length"] = nil
+                if ngx.header["location"] ~= nil then
+                    ngx.header["location"] = rewriteBaseUrl.rewriteURL(ngx.header["location"], {{ $location.Rewrite.Target }}, {{ $location.Path }}, {{ $server.Hostname }})
+                end
+                if ngx.header["content-location"] ~= nil then
+                    ngx.header["content-location"] = rewriteBaseUrl.rewriteURL(ngx.header["content-location"], {{ $location.Rewrite.Target }}, {{ $location.Path }}, {{ $server.Hostname }})
+                end
+            end
+        }
+
+        body_filter_by_lua_block {
+            if ngx.ctx.contentType == "html" then
+                local ctx = ngx.ctx
+                if ctx.buffers == nil then
+                    ctx.buffers = {}
+                    ctx.nbuffers = 0
+                end
+                local data = ngx.arg[1]
+                local eof = ngx.arg[2]
+                local next_idx = ctx.nbuffers + 1
+                if not eof then
+                    if data then
+                        ctx.buffers[next_idx] = data
+                        ctx.nbuffers = next_idx
+                        ngx.arg[1] = nil
+                    end
+                    return
+                elseif data then
+                    ctx.buffers[next_idx] = data
+                    ctx.nbuffers = next_idx
+                end
+                assert(ctx.buffers)
+                assert(ctx.nbuffers ~= 0, "buffer must not be empty")
+                local body = table.concat(ngx.ctx.buffers)
+
+                local gumbo = require "gumbo"
+                local rewriteBaseUrl = require "rewrite-base-url"
+                ngx.arg[1] = rewriteBaseUrl.rewriteHTML(body, {{ $location.Rewrite.Target }}, {{ $location.Path }}, {{ $server.Hostname }})
+            end
+        }
+        proxy_set_header Accept-Encoding '*';
+        {{ end }}
+
         proxy_set_header Host                   $best_http_host;
 
         # Pass the extracted client certificate to the backend
