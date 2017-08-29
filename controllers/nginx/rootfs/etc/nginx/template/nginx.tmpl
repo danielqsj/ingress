@@ -253,7 +253,7 @@ http {
     {{ range $name, $upstream := $backends }}
     {{ if eq $upstream.SessionAffinity.AffinityType "cookie" }}
     upstream sticky-{{ $upstream.Name }} {
-        sticky hash={{ $upstream.SessionAffinity.CookieSessionAffinity.Hash }} name={{ $upstream.SessionAffinity.CookieSessionAffinity.Name }}  httponly;
+        sticky hash={{ $upstream.SessionAffinity.CookieSessionAffinity.Hash }} name={{ $upstream.SessionAffinity.CookieSessionAffinity.Name }} path=$base_path httponly;
 
         {{ if (gt $cfg.UpstreamKeepaliveConnections 0) }}
         keepalive {{ $cfg.UpstreamKeepaliveConnections }};
@@ -672,6 +672,7 @@ stream {
         set $namespace      "{{ $ing.Namespace }}";
         set $ingress_name   "{{ $ing.Rule }}";
         set $service_name   "{{ $ing.Service }}";
+        set $base_path      "{{ $location.Path }}";
 
         {{ if (or $location.Rewrite.ForceSSLRedirect (and (not (empty $server.SSLCertificate)) $location.Rewrite.SSLRedirect)) }}
         # enforce ssl on server side
@@ -736,15 +737,23 @@ stream {
 
         {{ if (and $location.Rewrite.AddBaseURL (ne $location.Path $location.Rewrite.Target)) }}
         header_filter_by_lua_block {
-            if ngx.header["content-type"] == "text/html" then
+            if string.match(ngx.header["content-type"], "text/html") then
                 local rewriteBaseUrl = require "rewrite-base-url"
                 ngx.ctx.contentType = "html"
                 ngx.header["content-length"] = nil
                 if ngx.header["location"] ~= nil then
+                    {{ if eq $server.Hostname "_" }}
+                    ngx.header["location"] = rewriteBaseUrl.rewriteURL(ngx.header["location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "$best_http_host")
+                    {{ else }}
                     ngx.header["location"] = rewriteBaseUrl.rewriteURL(ngx.header["location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}")
+                    {{ end }}
                 end
                 if ngx.header["content-location"] ~= nil then
+                    {{ if eq $server.Hostname "_" }}
+                    ngx.header["content-location"] = rewriteBaseUrl.rewriteURL(ngx.header["content-location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "$best_http_host")
+                    {{ else }}
                     ngx.header["content-location"] = rewriteBaseUrl.rewriteURL(ngx.header["content-location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}")
+                    {{ end }}
                 end
             end
         }
@@ -776,7 +785,11 @@ stream {
 
                 local gumbo = require "gumbo"
                 local rewriteBaseUrl = require "rewrite-base-url"
+                {{ if eq $server.Hostname "_" }}
+                ngx.arg[1] = rewriteBaseUrl.rewriteHTML(body, "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "$best_http_host")
+                {{ else }}
                 ngx.arg[1] = rewriteBaseUrl.rewriteHTML(body, "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}")
+                {{ end }}
             end
         }
         proxy_set_header Accept-Encoding '*';
