@@ -166,6 +166,7 @@ type NGINXController struct {
 	ports *config.ListenPorts
 
 	backendDefaults defaults.Backend
+	bypassPortCheck bool
 }
 
 // Start start a new NGINX master process running in foreground.
@@ -298,22 +299,25 @@ func (n *NGINXController) ConfigureFlags(flags *pflag.FlagSet) {
 	flags.IntVar(&n.ports.Status, "status-port", 18080, `Indicates the TCP port to use for exposing the nginx status page`)
 	flags.IntVar(&n.ports.SSLProxy, "ssl-passtrough-proxy-port", 442, `Default port to use internally for SSL when SSL Passthgough is enabled`)
 	flags.IntVar(&n.ports.Default, "default-server-port", 8181, `Default port to use for exposing the default server (catch all)`)
+	flags.BoolVar(&n.bypassPortCheck, "bypass-port-check", false, `Bypass port check. Default is disabled`)
 }
 
 // OverrideFlags customize NGINX controller flags
 func (n *NGINXController) OverrideFlags(flags *pflag.FlagSet) {
 	// we check port collisions
-	if !isPortAvailable(n.ports.HTTP) {
-		glog.Fatalf("Port %v is already in use. Please check the flag --http-port", n.ports.HTTP)
-	}
-	if !isPortAvailable(n.ports.HTTPS) {
-		glog.Fatalf("Port %v is already in use. Please check the flag --https-port", n.ports.HTTPS)
-	}
-	if !isPortAvailable(n.ports.Status) {
-		glog.Fatalf("Port %v is already in use. Please check the flag --status-port", n.ports.Status)
-	}
-	if !isPortAvailable(n.ports.Default) {
-		glog.Fatalf("Port %v is already in use. Please check the flag --default-server-port", n.ports.Default)
+	if !n.bypassPortCheck {
+		if !isPortAvailable(n.ports.HTTP) {
+			glog.Fatalf("Port %v is already in use. Please check the flag --http-port", n.ports.HTTP)
+		}
+		if !isPortAvailable(n.ports.HTTPS) {
+			glog.Fatalf("Port %v is already in use. Please check the flag --https-port", n.ports.HTTPS)
+		}
+		if !isPortAvailable(n.ports.Status) {
+			glog.Fatalf("Port %v is already in use. Please check the flag --status-port", n.ports.Status)
+		}
+		if !isPortAvailable(n.ports.Default) {
+			glog.Fatalf("Port %v is already in use. Please check the flag --default-server-port", n.ports.Default)
+		}
 	}
 
 	ic, _ := flags.GetString("ingress-class")
