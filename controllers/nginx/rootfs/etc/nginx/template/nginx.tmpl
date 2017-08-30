@@ -682,7 +682,7 @@ stream {
             {{ end }}
 
             {{ if isLocationPathRedirectNeeded $location }}
-            if ($uri =~ {{ $location.Path }}) {
+            if ($uri = {{ $location.Path }}) {
                 return 302 {{ $location.Path }}/;
             }
             {{ end }}
