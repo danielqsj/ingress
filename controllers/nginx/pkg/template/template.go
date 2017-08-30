@@ -576,7 +576,7 @@ func isLocationPathRedirectNeeded(loc interface{}) bool {
 		return false
 	}
 
-	if strings.HasSuffix(location.Path, slash) && len(location.Rewrite.Target) > 0 {
+	if !strings.HasSuffix(location.Path, slash) && len(location.Rewrite.Target) > 0 {
 		return true
 	}
 	return false
