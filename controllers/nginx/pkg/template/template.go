@@ -155,8 +155,9 @@ var (
 		"serverConfig": func(all config.TemplateConfig, server *ingress.Server) interface{} {
 			return struct{ First, Second interface{} }{all, server}
 		},
-		"buildAuthSignURL":            buildAuthSignURL,
-		"isValidClientBodyBufferSize": isValidClientBodyBufferSize,
+		"buildAuthSignURL":             buildAuthSignURL,
+		"isValidClientBodyBufferSize":  isValidClientBodyBufferSize,
+		"isLocationPathRedirectNeeded": isLocationPathRedirectNeeded,
 	}
 )
 
@@ -567,6 +568,18 @@ func isValidClientBodyBufferSize(input interface{}) bool {
 	}
 
 	return true
+}
+
+func isLocationPathRedirectNeeded(loc interface{}) bool {
+	location, ok := loc.(*ingress.Location)
+	if !ok {
+		return false
+	}
+
+	if strings.HasSuffix(location.Path, slash) && len(location.Rewrite.Target) > 0 {
+		return true
+	}
+	return false
 }
 
 type ingressInformation struct {

@@ -681,9 +681,9 @@ stream {
         }
         {{ end }}
 
-        {{ if (and $location.Rewrite.AddBaseURL $location.Rewrite.Target) }}
-        if ($uri !~ "(.*)/") {
-        return 302 $1/;
+        {{ if isLocationPathRedirectNeeded $location }}
+        if ($uri =~ {{ $location.Path }}) {
+        return 302 {{ $location.Path }}/;
         }
         {{ end }}
 
