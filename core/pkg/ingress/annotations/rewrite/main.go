@@ -24,12 +24,13 @@ import (
 )
 
 const (
-	rewriteTo        = "ingress.kubernetes.io/rewrite-target"
-	addBaseURL       = "ingress.kubernetes.io/add-base-url"
-	baseURLScheme    = "ingress.kubernetes.io/base-url-scheme"
-	sslRedirect      = "ingress.kubernetes.io/ssl-redirect"
-	forceSSLRedirect = "ingress.kubernetes.io/force-ssl-redirect"
-	appRoot          = "ingress.kubernetes.io/app-root"
+	rewriteTo             = "ingress.kubernetes.io/rewrite-target"
+	addBaseURL            = "ingress.kubernetes.io/add-base-url"
+	baseURLScheme         = "ingress.kubernetes.io/base-url-scheme"
+	sslRedirect           = "ingress.kubernetes.io/ssl-redirect"
+	forceSSLRedirect      = "ingress.kubernetes.io/force-ssl-redirect"
+	appRoot               = "ingress.kubernetes.io/app-root"
+	rewriteExcludePattern = "ingress.kubernetes.io/rewrite-exclude-pattern"
 )
 
 // Redirect describes the per location redirect config
@@ -47,6 +48,8 @@ type Redirect struct {
 	ForceSSLRedirect bool `json:"forceSSLRedirect"`
 	// AppRoot defines the Application Root that the Controller must redirect if it's not in '/' context
 	AppRoot string `json:"appRoot"`
+	// RewriteExcludePattern define url pattern which will bypass rewrite
+	RewriteExcludePattern string `json:"rewriteExcludePattern"`
 }
 
 // Equal tests for equality between two Redirect types
@@ -73,6 +76,9 @@ func (r1 *Redirect) Equal(r2 *Redirect) bool {
 		return false
 	}
 	if r1.AppRoot != r2.AppRoot {
+		return false
+	}
+	if r1.RewriteExcludePattern != r2.RewriteExcludePattern {
 		return false
 	}
 
@@ -103,12 +109,14 @@ func (a rewrite) Parse(ing *extensions.Ingress) (interface{}, error) {
 	abu, _ := parser.GetBoolAnnotation(addBaseURL, ing)
 	bus, _ := parser.GetStringAnnotation(baseURLScheme, ing)
 	ar, _ := parser.GetStringAnnotation(appRoot, ing)
+	rep, _ := parser.GetStringAnnotation(rewriteExcludePattern, ing)
 	return &Redirect{
-		Target:           rt,
-		AddBaseURL:       abu,
-		BaseURLScheme:    bus,
-		SSLRedirect:      sslRe,
-		ForceSSLRedirect: fSslRe,
-		AppRoot:          ar,
+		Target:                rt,
+		AddBaseURL:            abu,
+		BaseURLScheme:         bus,
+		SSLRedirect:           sslRe,
+		ForceSSLRedirect:      fSslRe,
+		AppRoot:               ar,
+		RewriteExcludePattern: rep,
 	}, nil
 }

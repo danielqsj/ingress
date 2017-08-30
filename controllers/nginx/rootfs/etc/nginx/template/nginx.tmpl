@@ -681,6 +681,12 @@ stream {
         }
         {{ end }}
 
+        {{ if (and $location.Rewrite.AddBaseURL $location.Rewrite.Target) }}
+        if ($uri !~ "(.*)/") {
+        return 302 $1/;
+        }
+        {{ end }}
+
         {{ if isLocationAllowed $location }}
         {{ if gt (len $location.Whitelist.CIDR) 0 }}
         if ({{ buildDenyVariable (print $server.Hostname "_"  $path) }}) {
@@ -743,16 +749,16 @@ stream {
                 ngx.header["content-length"] = nil
                 if ngx.header["location"] ~= nil then
                     {{ if eq $server.Hostname "_" }}
-                    ngx.header["location"] = rewriteBaseUrl.rewriteURL(ngx.header["location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "$best_http_host")
+                    ngx.header["location"] = rewriteBaseUrl.rewriteURL(ngx.header["location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "$best_http_host", "{{ $location.Rewrite.RewriteExcludePattern }}")
                     {{ else }}
-                    ngx.header["location"] = rewriteBaseUrl.rewriteURL(ngx.header["location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}")
+                    ngx.header["location"] = rewriteBaseUrl.rewriteURL(ngx.header["location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}", "{{ $location.Rewrite.RewriteExcludePattern }}")
                     {{ end }}
                 end
                 if ngx.header["content-location"] ~= nil then
                     {{ if eq $server.Hostname "_" }}
-                    ngx.header["content-location"] = rewriteBaseUrl.rewriteURL(ngx.header["content-location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "$best_http_host")
+                    ngx.header["content-location"] = rewriteBaseUrl.rewriteURL(ngx.header["content-location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "$best_http_host", "{{ $location.Rewrite.RewriteExcludePattern }}")
                     {{ else }}
-                    ngx.header["content-location"] = rewriteBaseUrl.rewriteURL(ngx.header["content-location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}")
+                    ngx.header["content-location"] = rewriteBaseUrl.rewriteURL(ngx.header["content-location"], "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}", "{{ $location.Rewrite.RewriteExcludePattern }}")
                     {{ end }}
                 end
             end
@@ -786,9 +792,9 @@ stream {
                 local gumbo = require "gumbo"
                 local rewriteBaseUrl = require "rewrite-base-url"
                 {{ if eq $server.Hostname "_" }}
-                ngx.arg[1] = rewriteBaseUrl.rewriteHTML(body, "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "$best_http_host")
+                ngx.arg[1] = rewriteBaseUrl.rewriteHTML(body, "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "$best_http_host", "{{ $location.Rewrite.RewriteExcludePattern }}")
                 {{ else }}
-                ngx.arg[1] = rewriteBaseUrl.rewriteHTML(body, "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}")
+                ngx.arg[1] = rewriteBaseUrl.rewriteHTML(body, "{{ $location.Rewrite.Target }}", "{{ $location.Path }}", "{{ $server.Hostname }}", "{{ $location.Rewrite.RewriteExcludePattern }}")
                 {{ end }}
             end
         }
