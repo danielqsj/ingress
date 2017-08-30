@@ -157,7 +157,6 @@ var (
 		},
 		"buildAuthSignURL":            buildAuthSignURL,
 		"isValidClientBodyBufferSize": isValidClientBodyBufferSize,
-		"isRedirectNeeded":            isRedirectNeeded,
 	}
 )
 
