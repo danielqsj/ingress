@@ -306,35 +306,20 @@ func buildProxyPass(host string, b interface{}, loc interface{}) string {
 	}
 
 	if len(location.Rewrite.Target) > 0 {
-		abu := ""
-		if location.Rewrite.AddBaseURL {
-			// path has a slash suffix, so that it can be connected with baseuri directly
-			bPath := fmt.Sprintf("%s%s", path, "$baseuri")
-			if len(location.Rewrite.BaseURLScheme) > 0 {
-				abu = fmt.Sprintf(`subs_filter '<head(.*)>' '<head$1><base href="%v://$http_host%v">' r;
-	subs_filter '<HEAD(.*)>' '<HEAD$1><base href="%v://$http_host%v">' r;
-	`, location.Rewrite.BaseURLScheme, bPath, location.Rewrite.BaseURLScheme, bPath)
-			} else {
-				abu = fmt.Sprintf(`subs_filter '<head(.*)>' '<head$1><base href="$scheme://$http_host%v">' r;
-	subs_filter '<HEAD(.*)>' '<HEAD$1><base href="$scheme://$http_host%v">' r;
-	`, bPath, bPath)
-			}
+		target := location.Rewrite.Target
+		if !strings.HasSuffix(location.Rewrite.Target, slash) {
+			target = fmt.Sprintf("%s/", location.Rewrite.Target)
 		}
-
-		if location.Rewrite.Target == slash {
-			// special case redirect to /
-			// ie /something to /
+		if strings.HasSuffix(location.Path, slash) {
 			return fmt.Sprintf(`
-	rewrite %s(.*) /$1 break;
-	rewrite %s / break;
-	proxy_pass %s://%s;
-	%v`, path, location.Path, proto, upstreamName, abu)
+	rewrite %s(.*) %s$1 break;
+	proxy_pass %s://%s;`, path, target, proto, upstreamName)
 		}
 
 		return fmt.Sprintf(`
-	rewrite %s(.*) %s/$1 break;
-	proxy_pass %s://%s;
-	%v`, path, location.Rewrite.Target, proto, upstreamName, abu)
+	rewrite %s(.*) %s$1 break;
+	rewrite %s %s break;
+	proxy_pass %s://%s;`, path, target, location.Path, location.Rewrite.Target, proto, upstreamName)
 	}
 
 	// default proxy_pass
