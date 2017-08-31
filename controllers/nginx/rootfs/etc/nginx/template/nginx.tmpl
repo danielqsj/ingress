@@ -677,14 +677,14 @@ stream {
             {{ if (or $location.Rewrite.ForceSSLRedirect (and (not (empty $server.SSLCertificate)) $location.Rewrite.SSLRedirect)) }}
             # enforce ssl on server side
             if ($pass_access_scheme = http) {
-                set $skip_response_rewrite "true"
+                set $skip_response_rewrite "true";
                 return 301 https://$best_http_host$request_uri;
             }
             {{ end }}
 
             {{ if isLocationPathRedirectNeeded $location }}
             if ($uri = {{ $location.Path }}) {
-                set $skip_response_rewrite "true"
+                set $skip_response_rewrite "true";
                 return 302 {{ $location.Path }}/;
             }
             {{ end }}
