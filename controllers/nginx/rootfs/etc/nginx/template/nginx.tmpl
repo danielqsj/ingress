@@ -677,12 +677,14 @@ stream {
             {{ if (or $location.Rewrite.ForceSSLRedirect (and (not (empty $server.SSLCertificate)) $location.Rewrite.SSLRedirect)) }}
             # enforce ssl on server side
             if ($pass_access_scheme = http) {
+                set $skip_response_rewrite "true"
                 return 301 https://$best_http_host$request_uri;
             }
             {{ end }}
 
             {{ if isLocationPathRedirectNeeded $location }}
             if ($uri = {{ $location.Path }}) {
+                set $skip_response_rewrite "true"
                 return 302 {{ $location.Path }}/;
             }
             {{ end }}
@@ -743,7 +745,7 @@ stream {
 
             {{ if (and $location.Rewrite.AddBaseURL (ne $location.Path $location.Rewrite.Target)) }}
             header_filter_by_lua_block {
-                if string.match(ngx.header["content-type"], "text/html") then
+                if ngx.var.skip_response_rewrite ~= "true" and string.match(ngx.header["content-type"], "text/html") then
                     local rewriteBaseUrl = require "rewrite-base-url"
                     ngx.ctx.contentType = "html"
                     ngx.header["content-length"] = nil
