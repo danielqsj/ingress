@@ -24,14 +24,15 @@ import (
 )
 
 const (
-	bodySize     = "ingress.kubernetes.io/proxy-body-size"
-	connect      = "ingress.kubernetes.io/proxy-connect-timeout"
-	send         = "ingress.kubernetes.io/proxy-send-timeout"
-	read         = "ingress.kubernetes.io/proxy-read-timeout"
-	bufferSize   = "ingress.kubernetes.io/proxy-buffer-size"
-	cookiePath   = "ingress.kubernetes.io/proxy-cookie-path"
-	cookieDomain = "ingress.kubernetes.io/proxy-cookie-domain"
-	nextUpstream = "ingress.kubernetes.io/proxy-next-upstream"
+	bodySize      = "ingress.kubernetes.io/proxy-body-size"
+	connect       = "ingress.kubernetes.io/proxy-connect-timeout"
+	send          = "ingress.kubernetes.io/proxy-send-timeout"
+	read          = "ingress.kubernetes.io/proxy-read-timeout"
+	bufferSize    = "ingress.kubernetes.io/proxy-buffer-size"
+	cookiePath    = "ingress.kubernetes.io/proxy-cookie-path"
+	cookieDomain  = "ingress.kubernetes.io/proxy-cookie-domain"
+	nextUpstream  = "ingress.kubernetes.io/proxy-next-upstream"
+	disableEscape = "ingress.kubernetes.io/disable-escape"
 )
 
 // Configuration returns the proxy timeout to use in the upstream server/s
@@ -44,6 +45,7 @@ type Configuration struct {
 	CookieDomain   string `json:"cookieDomain"`
 	CookiePath     string `json:"cookiePath"`
 	NextUpstream   string `json:"nextUpstream"`
+	DisableEscape  bool   `json:"disableEscape"`
 }
 
 // Equal tests for equality between two Configuration types
@@ -73,6 +75,9 @@ func (l1 *Configuration) Equal(l2 *Configuration) bool {
 		return false
 	}
 	if l1.CookiePath != l2.CookiePath {
+		return false
+	}
+	if l1.DisableEscape != l2.DisableEscape {
 		return false
 	}
 
@@ -132,5 +137,7 @@ func (a proxy) Parse(ing *extensions.Ingress) (interface{}, error) {
 		nu = defBackend.ProxyNextUpstream
 	}
 
-	return &Configuration{bs, ct, st, rt, bufs, cd, cp, nu}, nil
+	de, _ := parser.GetBoolAnnotation(disableEscape, ing)
+
+	return &Configuration{bs, ct, st, rt, bufs, cd, cp, nu, de}, nil
 }
