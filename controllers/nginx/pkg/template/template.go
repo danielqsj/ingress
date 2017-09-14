@@ -268,8 +268,6 @@ func buildLogFormatUpstream(input interface{}) string {
 
 // buildProxyPass produces the proxy pass string, if the ingress has redirects
 // (specified through the ingress.kubernetes.io/rewrite-to annotation)
-// If the annotation ingress.kubernetes.io/add-base-url:"true" is specified it will
-// add a base tag in the head of the response from the service
 func buildProxyPass(host string, b interface{}, loc interface{}) string {
 	backends := b.([]*ingress.Backend)
 	location, ok := loc.(*ingress.Location)
@@ -311,15 +309,15 @@ func buildProxyPass(host string, b interface{}, loc interface{}) string {
 		if !strings.HasSuffix(location.Rewrite.Target, slash) {
 			target = fmt.Sprintf("%s/", location.Rewrite.Target)
 		}
-		if location.Proxy.DisableEscape {
+		if location.Proxy.DisableUrlDecode {
 			return fmt.Sprintf(`
-		rewrite ^ $request_uri;
-	    rewrite %s(.*) %s$1 break;
-	    proxy_pass %s://%s/$uri;`, path, target, proto, upstreamName)
+            rewrite ^ $request_uri;
+            rewrite %s(.*) %s$1 break;
+            proxy_pass %s://%s$uri;`, path, target, proto, upstreamName)
 		}
 		return fmt.Sprintf(`
-	    rewrite %s(.*) %s$1 break;
-	    proxy_pass %s://%s;`, path, target, proto, upstreamName)
+            rewrite %s(.*) %s$1 break;
+            proxy_pass %s://%s;`, path, target, proto, upstreamName)
 	}
 
 	// default proxy_pass

@@ -24,15 +24,15 @@ import (
 )
 
 const (
-	bodySize      = "ingress.kubernetes.io/proxy-body-size"
-	connect       = "ingress.kubernetes.io/proxy-connect-timeout"
-	send          = "ingress.kubernetes.io/proxy-send-timeout"
-	read          = "ingress.kubernetes.io/proxy-read-timeout"
-	bufferSize    = "ingress.kubernetes.io/proxy-buffer-size"
-	cookiePath    = "ingress.kubernetes.io/proxy-cookie-path"
-	cookieDomain  = "ingress.kubernetes.io/proxy-cookie-domain"
-	nextUpstream  = "ingress.kubernetes.io/proxy-next-upstream"
-	disableEscape = "ingress.kubernetes.io/disable-escape"
+	bodySize         = "ingress.kubernetes.io/proxy-body-size"
+	connect          = "ingress.kubernetes.io/proxy-connect-timeout"
+	send             = "ingress.kubernetes.io/proxy-send-timeout"
+	read             = "ingress.kubernetes.io/proxy-read-timeout"
+	bufferSize       = "ingress.kubernetes.io/proxy-buffer-size"
+	cookiePath       = "ingress.kubernetes.io/proxy-cookie-path"
+	cookieDomain     = "ingress.kubernetes.io/proxy-cookie-domain"
+	nextUpstream     = "ingress.kubernetes.io/proxy-next-upstream"
+	disableUrlDecode = "ingress.kubernetes.io/proxy-disable-url-decode"
 )
 
 // Configuration returns the proxy timeout to use in the upstream server/s
@@ -45,7 +45,7 @@ type Configuration struct {
 	CookieDomain   string `json:"cookieDomain"`
 	CookiePath     string `json:"cookiePath"`
 	NextUpstream   string `json:"nextUpstream"`
-	DisableEscape  bool   `json:"disableEscape"`
+	DisableUrlDecode  bool   `json:"disableUrlDecode"`
 }
 
 // Equal tests for equality between two Configuration types
@@ -77,7 +77,7 @@ func (l1 *Configuration) Equal(l2 *Configuration) bool {
 	if l1.CookiePath != l2.CookiePath {
 		return false
 	}
-	if l1.DisableEscape != l2.DisableEscape {
+	if l1.DisableUrlDecode != l2.DisableUrlDecode {
 		return false
 	}
 
@@ -137,7 +137,7 @@ func (a proxy) Parse(ing *extensions.Ingress) (interface{}, error) {
 		nu = defBackend.ProxyNextUpstream
 	}
 
-	de, _ := parser.GetBoolAnnotation(disableEscape, ing)
+	de, _ := parser.GetBoolAnnotation(disableUrlDecode, ing)
 
 	return &Configuration{bs, ct, st, rt, bufs, cd, cp, nu, de}, nil
 }
